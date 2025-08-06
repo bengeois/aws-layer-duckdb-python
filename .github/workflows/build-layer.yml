@@ -1,21 +1,26 @@
-name: Build and Deploy DuckDB Lambda Layer
+name: Build DuckDB Lambda Layer
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 env:
   DUCKDB_VERSION: 1.3.2
   AWS_REGION: eu-west-1
 
 jobs:
-  build-and-deploy:
+  build-duckdb-lambda-layer-x86_64:
+    name: Build DuckDB Lambda Layer for x86_64 Architecture
     runs-on: ubuntu-latest
+    env:
+      LAMBDA_ARCHITECTURE: x86_64
+      IMAGE_NAME: layer-duckdb-${{ env.DUCKDB_VERSION }}-${{ env.LAMBDA_ARCHITECTURE }}
+      ARCHIVE_NAME: duckdb-${{ env.DUCKDB_VERSION }}-${{ env.LAMBDA_ARCHITECTURE }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -23,67 +28,66 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build Docker image
+      - name: Build DuckDB
         run: |
-          docker build -f Dockerfile.x86_64 -t duckdb-layer:latest .
+          docker build --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg LAMBDA_ARCHITECTURE=${{ env.LAMBDA_ARCHITECTURE }} -f Dockerfile -t ${{ env.IMAGE_NAME }}:latest .
 
       - name: Extract zip from Docker container
         run: |
           # Create a temporary container
-          container_id=$(docker create duckdb-layer:latest)
+          container_id=$(docker create ${{ env.IMAGE_NAME }}:latest)
 
           # Copy the zip file from the container
-          docker cp $container_id:/tmp/duckdb-${{ env.DUCKDB_VERSION }}.zip ./duckdb-${{ env.DUCKDB_VERSION }}-x86_64.zip
+          docker cp $container_id:/tmp/duckdb.zip ./${{ env.ARCHIVE_NAME }}.zip
 
           # Clean up the container
           docker rm $container_id
 
           # Verify the file exists and show its size
-          ls -lh duckdb-${{ env.DUCKDB_VERSION }}-x86_64.zip
+          ls -lh ${{ env.ARCHIVE_NAME }}.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: duckdb-layer-x86_64
-          path: duckdb-${{ env.DUCKDB_VERSION }}-x86_64.zip
-          retention-days: 30
+          name: ${ env.ARCHIVE_NAME }
+          path: duckdb.zip
 
-      - name: Publish Lambda Layer
-        run: |
-          # Publish the layer
-          layer_version=$(aws lambda publish-layer-version \
-            --layer-name duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-') \
-            --description "DuckDB Python ${{ env.DUCKDB_VERSION }} for AWS Lambda" \
-            --zip-file fileb://duckdb-${{ env.DUCKDB_VERSION }}-x86_64.zip \
-            --compatible-runtimes python3.9 python3.10 python3.11 python3.12 python3.13 \
-            --compatible-architectures x86_64 \
-            --query 'Version' \
-            --output text)
+      # - name: Publish Lambda Layer
+      #   run: |
+      #     # Publish the layer
+      #     layer_version=$(aws lambda publish-layer-version \
+      #       --layer-name duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-') \
+      #       --description "DuckDB Python ${{ env.DUCKDB_VERSION }} for AWS Lambda" \
+      #       --zip-file fileb://duckdb-${{ env.DUCKDB_VERSION }}-x86_64.zip \
+      #       --compatible-runtimes python3.9 python3.10 python3.11 python3.12 python3.13 \
+      #       --compatible-architectures x86_64 \
+      #       --query 'Version' \
+      #       --output text)
 
-          echo "Published layer version: $layer_version"
+      #     echo "Published layer version: $layer_version"
 
-          # Get the layer ARN
-          layer_arn=$(aws lambda get-layer-version \
-            --layer-name duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-') \
-            --version-number $layer_version \
-            --query 'LayerArn' \
-            --output text)
+      #     # Get the layer ARN
+      #     layer_arn=$(aws lambda get-layer-version \
+      #       --layer-name duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-') \
+      #       --version-number $layer_version \
+      #       --query 'LayerArn' \
+      #       --output text)
 
-          echo "Layer ARN: $layer_arn"
+      #     echo "Layer ARN: $layer_arn"
 
-          # Make the layer public (optional)
-          aws lambda add-layer-version-permission \
-            --layer-name duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-') \
-            --version-number $layer_version \
-            --statement-id public-access \
-            --action lambda:GetLayerVersion \
-            --principal "*" || echo "Layer permission already exists or failed to set"
+      #     # Make the layer public (optional)
+      #     aws lambda add-layer-version-permission \
+      #       --layer-name duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-') \
+      #       --version-number $layer_version \
+      #       --statement-id public-access \
+      #       --action lambda:GetLayerVersion \
+      #       --principal "*" || echo "Layer permission already exists or failed to set"
 
-          # Save layer info to summary
-          echo "## 🚀 Lambda Layer Published" >> $GITHUB_STEP_SUMMARY
-          echo "- **Layer Name**: duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-')" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version**: $layer_version" >> $GITHUB_STEP_SUMMARY
-          echo "- **ARN**: $layer_arn" >> $GITHUB_STEP_SUMMARY
-          echo "- **DuckDB Version**: ${{ env.DUCKDB_VERSION }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Architecture**: x86_64" >> $GITHUB_STEP_SUMMARY
-          echo "- **Compatible Runtimes**: python3.9, python3.10, python3.11, python3.12, python3.13" >> $GITHUB_STEP_SUMMARY
+      #     # Save layer info to summary
+      #     echo "## 🚀 Lambda Layer Published" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **Layer Name**: duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-')" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **Version**: $layer_version" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **ARN**: $layer_arn" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **DuckDB Version**: ${{ env.DUCKDB_VERSION }}" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **Architecture**: x86_64" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **Compatible Runtimes**: python3.9, python3.10, python3.11, python3.12, python3.13" >> $GITHUB_STEP_SUMMARY
