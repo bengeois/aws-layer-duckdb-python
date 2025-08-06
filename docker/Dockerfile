@@ -7,13 +7,10 @@ ARG DUCKDB_VERSION
 WORKDIR /tmp
 
 # Update and install necessary packages
-RUN dnf update -y && dnf install -y zip 
+RUN dnf update -y && dnf install -y zip
 
-# Create a directory for DuckDB and install the package
-RUN mkdir -p /tmp/duckdb && \
-    pip install duckdb==${DUCKDB_VERSION} --no-cache-dir -t /tmp/duckdb
+# Install DuckDB package
+RUN pip install duckdb==${DUCKDB_VERSION} --no-cache-dir -t /tmp/python
 
 # Prepare the zip file for Lambda Layer
-RUN mkdir -p /tmp/python && \
-    cp -r /tmp/duckdb/* /tmp/python/ && \
-    zip -r duckdb.zip python
+RUN zip -r duckdb.zip python
