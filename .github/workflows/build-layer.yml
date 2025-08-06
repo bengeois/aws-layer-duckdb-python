@@ -52,7 +52,7 @@ jobs:
         run: |
           # Publish the layer
           layer_version=$(aws lambda publish-layer-version \
-            --layer-name duckdb-python-${{ env.DUCKDB_VERSION }} \
+            --layer-name duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-') \
             --description "DuckDB Python ${{ env.DUCKDB_VERSION }} for AWS Lambda" \
             --zip-file fileb://duckdb-${{ env.DUCKDB_VERSION }}-x86_64.zip \
             --compatible-runtimes python3.9 python3.10 python3.11 python3.12 python3.13 \
@@ -64,7 +64,7 @@ jobs:
 
           # Get the layer ARN
           layer_arn=$(aws lambda get-layer-version \
-            --layer-name duckdb-python-${{ env.DUCKDB_VERSION }} \
+            --layer-name duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-') \
             --version-number $layer_version \
             --query 'LayerArn' \
             --output text)
@@ -73,7 +73,7 @@ jobs:
 
           # Make the layer public (optional)
           aws lambda add-layer-version-permission \
-            --layer-name duckdb-python-${{ env.DUCKDB_VERSION }} \
+            --layer-name duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-') \
             --version-number $layer_version \
             --statement-id public-access \
             --action lambda:GetLayerVersion \
@@ -81,7 +81,7 @@ jobs:
 
           # Save layer info to summary
           echo "## 🚀 Lambda Layer Published" >> $GITHUB_STEP_SUMMARY
-          echo "- **Layer Name**: duckdb-python-${{ env.DUCKDB_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Layer Name**: duckdb-python-$(echo ${{ env.DUCKDB_VERSION }} | tr '.' '-')" >> $GITHUB_STEP_SUMMARY
           echo "- **Version**: $layer_version" >> $GITHUB_STEP_SUMMARY
           echo "- **ARN**: $layer_arn" >> $GITHUB_STEP_SUMMARY
           echo "- **DuckDB Version**: ${{ env.DUCKDB_VERSION }}" >> $GITHUB_STEP_SUMMARY
