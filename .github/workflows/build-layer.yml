@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LAMBDA_ARCHITECTURE: x86_64
-      IMAGE_NAME: layer-duckdb-${{ env.DUCKDB_VERSION }}-${{ env.LAMBDA_ARCHITECTURE }}
-      ARCHIVE_NAME: duckdb-${{ env.DUCKDB_VERSION }}-${{ env.LAMBDA_ARCHITECTURE }}
 
     steps:
       - name: Checkout code
@@ -30,26 +28,23 @@ jobs:
 
       - name: Build DuckDB
         run: |
-          docker build --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg LAMBDA_ARCHITECTURE=${{ env.LAMBDA_ARCHITECTURE }} -f Dockerfile -t ${{ env.IMAGE_NAME }}:latest .
+          docker build --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg LAMBDA_ARCHITECTURE=${{ env.LAMBDA_ARCHITECTURE }} -f Dockerfile -t layer-duckdb:latest .
 
       - name: Extract zip from Docker container
         run: |
           # Create a temporary container
-          container_id=$(docker create ${{ env.IMAGE_NAME }}:latest)
+          container_id=$(docker create layer-duckdb:latest)
 
           # Copy the zip file from the container
-          docker cp $container_id:/tmp/duckdb.zip ./${{ env.ARCHIVE_NAME }}.zip
+          docker cp $container_id:/tmp/duckdb.zip ./duckdb.zip
 
           # Clean up the container
           docker rm $container_id
 
-          # Verify the file exists and show its size
-          ls -lh ${{ env.ARCHIVE_NAME }}.zip
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${ env.ARCHIVE_NAME }
+          name: duckdb-${{ env.DUCKDB_VERSION }}-${{ env.LAMBDA_ARCHITECTURE }}
           path: duckdb.zip
 
       # - name: Publish Lambda Layer
