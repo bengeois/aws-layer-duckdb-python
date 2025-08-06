@@ -28,7 +28,7 @@ jobs:
 
       - name: Build DuckDB
         run: |
-          docker build --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg LAMBDA_ARCHITECTURE=${{ env.LAMBDA_ARCHITECTURE }} -f Dockerfile -t layer-duckdb:latest .
+          docker build --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg LAMBDA_ARCHITECTURE=${{ env.LAMBDA_ARCHITECTURE }} -f ./docker/Dockerfile -t layer-duckdb:latest .
 
       - name: Extract zip from Docker container
         run: |
