@@ -26,12 +26,12 @@ jobs:
 
       - name: Build DuckDB
         run: |
-          docker build --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg ARCHITECTURE=${{ matrix.architecture }} -f ./docker/Dockerfile -t layer-duckdb:latest .
+          docker build --platform ${{ matrix.architecture == 'x86_64' && 'linux/amd64' || 'linux/arm64' }} --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg ARCHITECTURE=${{ matrix.architecture }} -f ./docker/Dockerfile -t layer-duckdb:latest .
 
       - name: Extract zip from Docker container
         run: |
           # Create a temporary container
-          container_id=$(docker create layer-duckdb:latest)
+          container_id=$(docker create --platform ${{ matrix.architecture == 'x86_64' && 'linux/amd64' || 'linux/arm64' }} layer-duckdb:latest)
 
           # Copy the zip file from the container
           docker cp $container_id:/tmp/duckdb.zip ./duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.architecture }}.zip
