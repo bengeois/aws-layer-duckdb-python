@@ -1,13 +1,21 @@
-ARG LAMBDA_ARCHITECTURE
+ARG ARCHITECTURE
 
-FROM amazon/aws-lambda-python:3.13-${LAMBDA_ARCHITECTURE}
+FROM amazon/aws-lambda-python:3.13-${ARCHITECTURE}
 
 ARG DUCKDB_VERSION
 
 WORKDIR /tmp
 
-# Update and install necessary packages
-RUN dnf update -y && dnf install -y zip
+# Detect the package manager and install zip
+RUN if command -v dnf &> /dev/null; then \
+        dnf update -y && dnf install -y zip; \
+    elif command -v yum &> /dev/null; then \
+        yum update -y && yum install -y zip; \
+    elif command -v apk &> /dev/null; then \
+        apk update && apk add zip; \
+    else \
+        echo "Unsupported package manager" && exit 1; \
+    fi
 
 # Install DuckDB package
 RUN pip install duckdb==${DUCKDB_VERSION} --no-cache-dir -t /tmp/python

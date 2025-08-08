@@ -6,12 +6,14 @@ on:
 env:
   DUCKDB_VERSION: 1.3.2
   AWS_REGION: eu-west-1
-  LAMBDA_ARCHITECTURE: x86_64
 
 jobs:
-  build-duckdb-lambda-layer-x86_64:
-    name: Build DuckDB Lambda Layer for x86_64 Architecture
+  build-duckdb-lambda-layer:
+    name: Build DuckDB Lambda Layer for all architectures
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: [x86_64, arm64]
 
     steps:
       - name: Checkout code
@@ -19,7 +21,7 @@ jobs:
 
       - name: Build DuckDB
         run: |
-          docker build --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg LAMBDA_ARCHITECTURE=${{ env.LAMBDA_ARCHITECTURE }} -f ./docker/Dockerfile -t layer-duckdb:latest .
+          docker build --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg ARCHITECTURE=${{ matrix.architecture }} -f ./docker/Dockerfile -t layer-duckdb:latest .
 
       - name: Extract zip from Docker container
         run: |
@@ -27,7 +29,7 @@ jobs:
           container_id=$(docker create layer-duckdb:latest)
 
           # Copy the zip file from the container
-          docker cp $container_id:/tmp/duckdb.zip ./duckdb-${{ env.DUCKDB_VERSION }}-python-${{ env.LAMBDA_ARCHITECTURE }}.zip
+          docker cp $container_id:/tmp/duckdb.zip ./duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.architecture }}.zip
 
           # Clean up the container
           docker rm $container_id
@@ -35,19 +37,22 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ env.LAMBDA_ARCHITECTURE }}
-          path: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ env.LAMBDA_ARCHITECTURE }}.zip
+          name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.architecture }}
+          path: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.architecture }}.zip
 
   publish-layer:
     name: Publish Layer to All Regions
-    needs: build-duckdb-lambda-layer-x86_64
+    needs: build-duckdb-lambda-layer
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: [x86_64, arm64]
 
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ env.LAMBDA_ARCHITECTURE }}
+          name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.architecture }}
 
       # Configure AWS credentials
       - name: Configure AWS credentials
@@ -106,11 +111,11 @@ jobs:
             # Publish the layer
             if layer_version=$(aws lambda publish-layer-version \
               --region $region \
-              --layer-name duckdb-python-${{ env.LAMBDA_ARCHITECTURE }} \
-              --description "DuckDB ${{ env.DUCKDB_VERSION }} Python for AWS Lambda (${{ env.LAMBDA_ARCHITECTURE }})" \
-              --zip-file fileb://duckdb-${{ env.DUCKDB_VERSION }}-python-${{ env.LAMBDA_ARCHITECTURE }}.zip \
-              --compatible-runtimes python3.13 \
-              --compatible-architectures ${{ env.LAMBDA_ARCHITECTURE }} \
+              --layer-name duckdb-python-${{ matrix.architecture }} \
+              --description "DuckDB ${{ env.DUCKDB_VERSION }} Python for AWS Lambda (${{ matrix.architecture }})" \
+              --zip-file fileb://duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.architecture }}.zip \
+              --compatible-runtimes python3.9 python3.10 python3.11 python3.12 python3.13 \
+              --compatible-architectures ${{ matrix.architecture }} \
               --query 'Version' \
               --output text 2>/dev/null); then
               
@@ -119,7 +124,7 @@ jobs:
               # Get the layer ARN
               layer_arn=$(aws lambda get-layer-version \
                 --region $region \
-                --layer-name duckdb-python-${{ env.LAMBDA_ARCHITECTURE }} \
+                --layer-name duckdb-python-${{ matrix.architecture }} \
                 --version-number $layer_version \
                 --query 'LayerArn' \
                 --output text)
@@ -127,7 +132,7 @@ jobs:
               # Make the layer public
               aws lambda add-layer-version-permission \
                 --region $region \
-                --layer-name duckdb-python-${{ env.LAMBDA_ARCHITECTURE }} \
+                --layer-name duckdb-python-${{ matrix.architecture }} \
                 --version-number $layer_version \
                 --statement-id public-access \
                 --action lambda:GetLayerVersion \
@@ -155,9 +160,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "**Summary**: $SUCCESS_COUNT/${#REGIONS[@]} regions successful" >> $GITHUB_STEP_SUMMARY
-          echo "**Layer Name**: duckdb-python-${{ env.LAMBDA_ARCHITECTURE }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Layer Name**: duckdb-python-${{ matrix.architecture }}" >> $GITHUB_STEP_SUMMARY
           echo "**DuckDB Version**: ${{ env.DUCKDB_VERSION }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Architecture**: ${{ env.LAMBDA_ARCHITECTURE }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Architecture**: ${{ matrix.architecture }}" >> $GITHUB_STEP_SUMMARY
 
           if [ ${#FAILED_REGIONS[@]} -gt 0 ]; then
             echo "**Failed Regions**: ${FAILED_REGIONS[*]}" >> $GITHUB_STEP_SUMMARY
