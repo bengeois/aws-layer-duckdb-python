@@ -214,7 +214,10 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Update layer versions JSON
+      - name: Update documentations
+        env:
+          AWS_REGIONS: ${{ env.AWS_REGIONS }}
+          AWS_ACCOUNT_ID: "${{ env.AWS_ACCOUNT_ID }}"
         run: |
           echo "Updating layer versions with DuckDB ${{ env.DUCKDB_VERSION }} and layer version ${{ needs.publish-layer.outputs.layer-version }}"
           python scripts/update_layer_versions.py "${{ env.DUCKDB_VERSION }}" "${{ needs.publish-layer.outputs.layer-version }}"
