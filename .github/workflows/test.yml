@@ -1,6 +1,9 @@
 name: Test workflow
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - ft/auto-readme
 
 jobs:
   step1:
