@@ -18,6 +18,7 @@ This project provides ready-to-use Lambda layers containing DuckDB Python bindin
 ## Quick Start
 
 1. **Add the layer to your Lambda function:**
+
    ```bash
    # Using AWS CLI
    aws lambda update-function-configuration \
@@ -26,16 +27,17 @@ This project provides ready-to-use Lambda layers containing DuckDB Python bindin
    ```
 
 2. **Use DuckDB in your Lambda function:**
+
    ```python
    import duckdb
-   
+
    def lambda_handler(event, context):
        # Create an in-memory database
        conn = duckdb.connect(':memory:')
-       
+
        # Execute a query
        result = conn.execute("SELECT 'Hello DuckDB!' as message").fetchall()
-       
+
        return {
            'statusCode': 200,
            'body': result[0][0]
@@ -51,6 +53,28 @@ This project is currently under active development. The README will be updated s
 - ✅ Version compatibility matrix
 
 **Stay tuned for updates!** ⭐ Star this repository to get notified when the full documentation is available.
+
+## DuckDB layers
+
+### Usage
+
+- **x86_64**: `arn:aws:lambda:REGION:ACCOUNT_ID:layer:duckdb-python-x86_64:VERSION`
+- **arm64**: `arn:aws:lambda:REGION:ACCOUNT_ID:layer:duckdb-python-arm64:VERSION`
+
+To use the DuckDB layer in your Lambda function, add the appropriate layer ARN to your function configuration.
+
+### Mappings
+
+<!-- MAPPINGS-LIST:START -->
+
+| Layer version | DuckDB version |
+| ------------- | -------------- |
+| 1             | v0.8.0         |
+| 2             | v0.8.1         |
+| 3             | v0.9.0         |
+| 4             | v0.9.1         |
+
+<!-- MAPPINGS-LIST:END -->
 
 ## Contributing
 
