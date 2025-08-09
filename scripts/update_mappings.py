@@ -11,11 +11,6 @@ from datetime import datetime
 def update_layer_versions(duckdb_version, layer_version, json_file_path):
     """
     Update the layer-versions.json file with new version information.
-    
-    Args:
-        duckdb_version (str): The DuckDB version (e.g., "1.3.2")
-        layer_version (str): The AWS Lambda layer version (e.g., "42")
-        json_file_path (str): Path to the layer-versions.json file
     """
     # Load the layer versions file
     if os.path.exists(json_file_path):
@@ -31,8 +26,8 @@ def update_layer_versions(duckdb_version, layer_version, json_file_path):
     
     with open(json_file_path, 'w') as f:
         json.dump(data, f, indent=2, sort_keys=True)
-    
-    print(f"Updated layer-versions.json: DuckDB {duckdb_version} -> Layer version {layer_version}")
+
+    print(f"Step 1: layer-versions.json updated successfully")
     return data
 
 def update_content_between_delimiters(content, start_delimiter, end_delimiter, new_content):
@@ -95,7 +90,7 @@ def update_readme_mappings(data, readme_path):
 
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python update_mappings.py <duckdb_version> <layer_version>")
+        print("Incorrect number of arguments for update_mappings.py")
         sys.exit(1)
     
     duckdb_version = sys.argv[1]
@@ -111,7 +106,5 @@ def main():
     # Update README mappings table
     update_readme_mappings(data, readme_path)
     
-    print("Mappings update completed successfully!")
-
 if __name__ == "__main__":
     main()

@@ -80,32 +80,7 @@ To use the DuckDB layer in your Lambda function, add the appropriate layer ARN t
 | ------ | --------- |
 | us-east-1 | arn:aws:lambda:us-east-1:911510765542:layer:duckdb-python-x86_64:10 |
 | us-east-2 | arn:aws:lambda:us-east-2:911510765542:layer:duckdb-python-x86_64:10 |
-| us-west-1 | arn:aws:lambda:us-west-1:911510765542:layer:duckdb-python-x86_64:10 |
-| us-west-2 | arn:aws:lambda:us-west-2:911510765542:layer:duckdb-python-x86_64:10 |
-| af-south-1 | arn:aws:lambda:af-south-1:911510765542:layer:duckdb-python-x86_64:10 |
-| ap-east-1 | arn:aws:lambda:ap-east-1:911510765542:layer:duckdb-python-x86_64:10 |
-| ap-northeast-1 | arn:aws:lambda:ap-northeast-1:911510765542:layer:duckdb-python-x86_64:10 |
-| ap-northeast-2 | arn:aws:lambda:ap-northeast-2:911510765542:layer:duckdb-python-x86_64:10 |
-| ap-northeast-3 | arn:aws:lambda:ap-northeast-3:911510765542:layer:duckdb-python-x86_64:10 |
-| ap-south-1 | arn:aws:lambda:ap-south-1:911510765542:layer:duckdb-python-x86_64:10 |
-| ap-south-2 | arn:aws:lambda:ap-south-2:911510765542:layer:duckdb-python-x86_64:10 |
-| ap-southeast-1 | arn:aws:lambda:ap-southeast-1:911510765542:layer:duckdb-python-x86_64:10 |
-| ap-southeast-2 | arn:aws:lambda:ap-southeast-2:911510765542:layer:duckdb-python-x86_64:10 |
-| ap-southeast-3 | arn:aws:lambda:ap-southeast-3:911510765542:layer:duckdb-python-x86_64:10 |
-| ap-southeast-4 | arn:aws:lambda:ap-southeast-4:911510765542:layer:duckdb-python-x86_64:10 |
-| ca-central-1 | arn:aws:lambda:ca-central-1:911510765542:layer:duckdb-python-x86_64:10 |
-| eu-central-1 | arn:aws:lambda:eu-central-1:911510765542:layer:duckdb-python-x86_64:10 |
-| eu-central-2 | arn:aws:lambda:eu-central-2:911510765542:layer:duckdb-python-x86_64:10 |
-| eu-north-1 | arn:aws:lambda:eu-north-1:911510765542:layer:duckdb-python-x86_64:10 |
-| eu-south-1 | arn:aws:lambda:eu-south-1:911510765542:layer:duckdb-python-x86_64:10 |
-| eu-south-2 | arn:aws:lambda:eu-south-2:911510765542:layer:duckdb-python-x86_64:10 |
 | eu-west-1 | arn:aws:lambda:eu-west-1:911510765542:layer:duckdb-python-x86_64:10 |
-| eu-west-2 | arn:aws:lambda:eu-west-2:911510765542:layer:duckdb-python-x86_64:10 |
-| eu-west-3 | arn:aws:lambda:eu-west-3:911510765542:layer:duckdb-python-x86_64:10 |
-| il-central-1 | arn:aws:lambda:il-central-1:911510765542:layer:duckdb-python-x86_64:10 |
-| me-central-1 | arn:aws:lambda:me-central-1:911510765542:layer:duckdb-python-x86_64:10 |
-| me-south-1 | arn:aws:lambda:me-south-1:911510765542:layer:duckdb-python-x86_64:10 |
-| sa-east-1 | arn:aws:lambda:sa-east-1:911510765542:layer:duckdb-python-x86_64:10 |
 <!-- LATEST-x86_64:END -->
 
 ### Latest ARM64 layer ARNs
@@ -115,32 +90,7 @@ To use the DuckDB layer in your Lambda function, add the appropriate layer ARN t
 | ------ | --------- |
 | us-east-1 | arn:aws:lambda:us-east-1:911510765542:layer:duckdb-python-arm64:10 |
 | us-east-2 | arn:aws:lambda:us-east-2:911510765542:layer:duckdb-python-arm64:10 |
-| us-west-1 | arn:aws:lambda:us-west-1:911510765542:layer:duckdb-python-arm64:10 |
-| us-west-2 | arn:aws:lambda:us-west-2:911510765542:layer:duckdb-python-arm64:10 |
-| af-south-1 | arn:aws:lambda:af-south-1:911510765542:layer:duckdb-python-arm64:10 |
-| ap-east-1 | arn:aws:lambda:ap-east-1:911510765542:layer:duckdb-python-arm64:10 |
-| ap-northeast-1 | arn:aws:lambda:ap-northeast-1:911510765542:layer:duckdb-python-arm64:10 |
-| ap-northeast-2 | arn:aws:lambda:ap-northeast-2:911510765542:layer:duckdb-python-arm64:10 |
-| ap-northeast-3 | arn:aws:lambda:ap-northeast-3:911510765542:layer:duckdb-python-arm64:10 |
-| ap-south-1 | arn:aws:lambda:ap-south-1:911510765542:layer:duckdb-python-arm64:10 |
-| ap-south-2 | arn:aws:lambda:ap-south-2:911510765542:layer:duckdb-python-arm64:10 |
-| ap-southeast-1 | arn:aws:lambda:ap-southeast-1:911510765542:layer:duckdb-python-arm64:10 |
-| ap-southeast-2 | arn:aws:lambda:ap-southeast-2:911510765542:layer:duckdb-python-arm64:10 |
-| ap-southeast-3 | arn:aws:lambda:ap-southeast-3:911510765542:layer:duckdb-python-arm64:10 |
-| ap-southeast-4 | arn:aws:lambda:ap-southeast-4:911510765542:layer:duckdb-python-arm64:10 |
-| ca-central-1 | arn:aws:lambda:ca-central-1:911510765542:layer:duckdb-python-arm64:10 |
-| eu-central-1 | arn:aws:lambda:eu-central-1:911510765542:layer:duckdb-python-arm64:10 |
-| eu-central-2 | arn:aws:lambda:eu-central-2:911510765542:layer:duckdb-python-arm64:10 |
-| eu-north-1 | arn:aws:lambda:eu-north-1:911510765542:layer:duckdb-python-arm64:10 |
-| eu-south-1 | arn:aws:lambda:eu-south-1:911510765542:layer:duckdb-python-arm64:10 |
-| eu-south-2 | arn:aws:lambda:eu-south-2:911510765542:layer:duckdb-python-arm64:10 |
 | eu-west-1 | arn:aws:lambda:eu-west-1:911510765542:layer:duckdb-python-arm64:10 |
-| eu-west-2 | arn:aws:lambda:eu-west-2:911510765542:layer:duckdb-python-arm64:10 |
-| eu-west-3 | arn:aws:lambda:eu-west-3:911510765542:layer:duckdb-python-arm64:10 |
-| il-central-1 | arn:aws:lambda:il-central-1:911510765542:layer:duckdb-python-arm64:10 |
-| me-central-1 | arn:aws:lambda:me-central-1:911510765542:layer:duckdb-python-arm64:10 |
-| me-south-1 | arn:aws:lambda:me-south-1:911510765542:layer:duckdb-python-arm64:10 |
-| sa-east-1 | arn:aws:lambda:sa-east-1:911510765542:layer:duckdb-python-arm64:10 |
 <!-- LATEST-arm64:END -->
 
 ## Contributing

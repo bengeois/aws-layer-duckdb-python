@@ -122,13 +122,7 @@ def main():
     json_file_path = os.path.join(script_dir, '..', 'layer-versions.json')
     readme_path = os.path.join(script_dir, '..', 'README.md')
     
-    try:
-        # Update README ARN tables
-        update_readme_arn_tables(readme_path, json_file_path)
-        print("ARN tables update completed successfully!")
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+    update_readme_arn_tables(readme_path, json_file_path)
 
 if __name__ == "__main__":
     main()
