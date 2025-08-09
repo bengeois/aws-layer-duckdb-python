@@ -1,4 +1,4 @@
-name: Build DuckDB Lambda Layer
+name: Build AWS Lambda Layers for DuckDB
 
 on:
   workflow_dispatch:
@@ -6,9 +6,11 @@ on:
 env:
   DUCKDB_VERSION: 1.3.2
   AWS_REGION: eu-west-1
+  AWS_REGIONS: ${{ vars.AWS_REGIONS }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
 
 jobs:
-  build-duckdb-lambda-layer:
+  build-duckdb:
     name: Build DuckDB Lambda Layer for all architectures
     runs-on: ubuntu-latest
     strategy:
@@ -17,18 +19,22 @@ jobs:
 
     steps:
       - name: Checkout code
+        id: checkout
         uses: actions/checkout@v4
 
       - name: Set up QEMU
+        id: setup-qemu
         uses: docker/setup-qemu-action@v3
         with:
           platforms: ${{ matrix.architecture == 'x86_64' && 'linux/amd64' || 'linux/arm64' }}
 
       - name: Build DuckDB
+        id: build
         run: |
           docker build --platform ${{ matrix.architecture == 'x86_64' && 'linux/amd64' || 'linux/arm64' }} --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg ARCHITECTURE=${{ matrix.architecture }} -f ./docker/Dockerfile -t layer-duckdb:latest .
 
       - name: Extract zip from Docker container
+        id: extract-zip
         run: |
           # Create a temporary container
           container_id=$(docker create --platform ${{ matrix.architecture == 'x86_64' && 'linux/amd64' || 'linux/arm64' }} layer-duckdb:latest)
@@ -40,6 +46,7 @@ jobs:
           docker rm $container_id
 
       - name: Upload artifact
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.architecture }}
@@ -47,20 +54,24 @@ jobs:
 
   publish-layer:
     name: Publish Layer to All Regions
-    needs: build-duckdb-lambda-layer
+    needs: build-duckdb
     runs-on: ubuntu-latest
+    outputs:
+      layer-version: ${{ steps.publish.outputs.layer-version }}
     strategy:
       matrix:
         architecture: [x86_64, arm64]
 
     steps:
       - name: Download artifact
+        id: download
         uses: actions/download-artifact@v4
         with:
           name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.architecture }}
 
       # Configure AWS credentials
       - name: Configure AWS credentials
+        id: configure-aws-credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -68,38 +79,10 @@ jobs:
           aws-region: us-east-1 # Default region for initial setup
 
       - name: Publish Lambda Layer to All Regions
+        id: publish
         run: |
-          # Define all AWS regions
-          REGIONS=(
-            "us-east-1"
-            "us-east-2" 
-            "us-west-1"
-            "us-west-2"
-            "af-south-1"
-            "ap-east-1"
-            "ap-northeast-1"
-            "ap-northeast-2"
-            "ap-northeast-3"
-            "ap-south-1"
-            "ap-south-2"
-            "ap-southeast-1"
-            "ap-southeast-2"
-            "ap-southeast-3"
-            "ap-southeast-4"
-            "ca-central-1"
-            "eu-central-1"
-            "eu-central-2"
-            "eu-north-1"
-            "eu-south-1"
-            "eu-south-2"
-            "eu-west-1"
-            "eu-west-2"
-            "eu-west-3"
-            "il-central-1"
-            "me-central-1"
-            "me-south-1"
-            "sa-east-1"
-          )
+          # Get AWS regions from environment variable
+          IFS=',' read -ra REGIONS <<< "${{ env.AWS_REGIONS }}"
 
           # Initialize summary
           echo "## Lambda Layer Publication Results" >> $GITHUB_STEP_SUMMARY
@@ -108,6 +91,7 @@ jobs:
           # Track success/failure
           SUCCESS_COUNT=0
           FAILED_REGIONS=()
+          LAYER_VERSION=""
 
           # Loop through each region
           for region in "${REGIONS[@]}"; do
@@ -125,6 +109,11 @@ jobs:
               --output text 2>/dev/null); then
               
               echo "Published layer version: $layer_version in region $region"
+              
+              # Store layer version for output (same version across all regions)
+              if [ -z "$LAYER_VERSION" ]; then
+                LAYER_VERSION=$layer_version
+              fi
               
               # Get the layer ARN
               layer_arn=$(aws lambda get-layer-version \
@@ -161,6 +150,9 @@ jobs:
             sleep 1
           done
 
+          # Set output for layer version
+          echo "layer-version=$LAYER_VERSION" >> $GITHUB_OUTPUT
+
           # Final summary
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
@@ -168,6 +160,7 @@ jobs:
           echo "**Layer Name**: duckdb-python-${{ matrix.architecture }}" >> $GITHUB_STEP_SUMMARY
           echo "**DuckDB Version**: ${{ env.DUCKDB_VERSION }}" >> $GITHUB_STEP_SUMMARY
           echo "**Architecture**: ${{ matrix.architecture }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Layer Version**: $LAYER_VERSION" >> $GITHUB_STEP_SUMMARY
 
           if [ ${#FAILED_REGIONS[@]} -gt 0 ]; then
             echo "**Failed Regions**: ${FAILED_REGIONS[*]}" >> $GITHUB_STEP_SUMMARY
@@ -176,3 +169,34 @@ jobs:
           else
             echo "All regions published successfully!"
           fi
+
+  update-docs:
+    name: Update Documentation
+    needs: publish-layer
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Update documentations
+        run: |
+          python scripts/update_docs.py "${{ env.DUCKDB_VERSION }}" "${{ needs.publish-layer.outputs.layer-version }}"
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: "docs(): update documentation with for DuckDB ${DUCKDB_VERSION}"
+          branch: "ft/auto-readme"
+          commit_user_name: "bengeois"
+          commit_user_email: "me@bbourgeois.dev"
+          commit_author: bengeois 🤖 <me@bbourgeois.dev>
