@@ -29,4 +29,4 @@ jobs:
     steps:
       - name: Use Layer Versions
         run: |
-          echo "Layer Version: ${{ needs.publish.outputs.layer-version }}"
+          echo "Layer Version: ${{ needs.step1.outputs.layer-version }}"
