@@ -66,12 +66,38 @@ To use the DuckDB layer in your Lambda function, add the appropriate layer ARN t
 ### Mappings
 
 <!-- MAPPINGS-LIST:START -->
+
 | Layer version | DuckDB version |
 | ------------- | -------------- |
-| 6 | v0.3.2 |
-| 7 | v1.3.2 |
-| 7 | v1.3.1 |
+| 6             | v0.3.2         |
+| 7             | v1.3.2         |
+| 7             | v1.3.1         |
+
 <!-- MAPPINGS-LIST:END -->
+
+### Latest x86_64 layer ARNs
+
+<!-- LATEST-x86_64:START -->
+
+| Region   | Layer ARN                                                          |
+| -------- | ------------------------------------------------------------------ |
+| eu-west1 | arn:aws:lambda:eu-west-1:911510765542:layer:duckdb-python-x86_64:7 |
+| eu-west2 | arn:aws:lambda:eu-west-2:911510765542:layer:duckdb-python-x86_64:7 |
+| eu-west3 | arn:aws:lambda:eu-west-3:911510765542:layer:duckdb-python-x86_64:7 |
+
+<!-- LATEST-x86_64:END -->
+
+### Latest ARM64 layer ARNs
+
+<!-- LATEST-arm64:START -->
+
+| Region   | Layer ARN                                                         |
+| -------- | ----------------------------------------------------------------- |
+| eu-west1 | arn:aws:lambda:eu-west-1:911510765542:layer:duckdb-python-arm64:7 |
+| eu-west2 | arn:aws:lambda:eu-west-2:911510765542:layer:duckdb-python-arm64:7 |
+| eu-west3 | arn:aws:lambda:eu-west-3:911510765542:layer:duckdb-python-arm64:7 |
+
+<!-- LATEST-arm64:END -->
 
 ## Contributing
 
