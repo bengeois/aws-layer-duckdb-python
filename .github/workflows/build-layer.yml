@@ -202,6 +202,30 @@ jobs:
     needs: publish-layer
     runs-on: ubuntu-latest
     steps:
-      - name: Use Layer Versions
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Update layer versions JSON
         run: |
-          echo "Layer Version: ${{ needs.publish-layer.outputs.layer-version }}"
+          echo "Updating layer versions with DuckDB ${{ env.DUCKDB_VERSION }} and layer version ${{ needs.publish-layer.outputs.layer-version }}"
+          python scripts/update_layer_versions.py "${{ env.DUCKDB_VERSION }}" "${{ needs.publish-layer.outputs.layer-version }}"
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add layer-versions.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update layer versions for DuckDB ${{ env.DUCKDB_VERSION }} (layer version ${{ needs.publish-layer.outputs.layer-version }})"
+            # Push to ft/auto-readme branch
+            git push origin HEAD:ft/auto-readme
+          fi
