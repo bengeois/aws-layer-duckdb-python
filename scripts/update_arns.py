@@ -119,7 +119,7 @@ def update_readme_arn_tables(readme_path, json_file_path):
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    json_file_path = os.path.join(script_dir, '..', 'layer-versions.json')
+    json_file_path = os.path.join(script_dir, '../data', 'layer-versions.json')
     readme_path = os.path.join(script_dir, '..', 'README.md')
     
     update_readme_arn_tables(readme_path, json_file_path)

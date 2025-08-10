@@ -97,7 +97,7 @@ def main():
     layer_version = sys.argv[2]
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    json_file_path = os.path.join(script_dir, '..', 'layer-versions.json')
+    json_file_path = os.path.join(script_dir, '../data', 'layer-versions.json')
     readme_path = os.path.join(script_dir, '..', 'README.md')
     
     # Update JSON file
