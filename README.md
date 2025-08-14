@@ -68,7 +68,7 @@ To use the DuckDB layer in your Lambda function, add the appropriate layer ARN t
 <!-- MAPPINGS-LIST:START -->
 | Layer version | DuckDB version |
 | ------------- | -------------- |
-| 8 | v1.1.0 |
+| 2 | v0.9.0 |
 <!-- MAPPINGS-LIST:END -->
 
 You can find the complete list of layer ARNs in the [data/arns.json](data/arns.json) file.
