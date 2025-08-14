@@ -8,7 +8,7 @@ on:
 ################################
 #### ENV VARIABLES
 env:
-  DUCKDB_VERSION: 1.1.0
+  DUCKDB_VERSION: 0.9.0
   AWS_REGIONS: ${{ vars.AWS_REGIONS }}
   AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
 
@@ -25,8 +25,8 @@ jobs:
       - id: matrix
         run: |
           echo 'architectures=["x86_64", "arm64"]' >> $GITHUB_OUTPUT
-          echo 'python-versions=["3.9", "3.10"]' >> $GITHUB_OUTPUT
-          echo 'python-versions-string=3.9,3.10' >> $GITHUB_OUTPUT
+          echo 'python-versions=["3.9", "3.10", "3.11"]' >> $GITHUB_OUTPUT
+          echo 'python-versions-string=3.9,3.10,3.11' >> $GITHUB_OUTPUT
   ################################
   #### PACKAGE DUCKDB
   package-duckdb:
