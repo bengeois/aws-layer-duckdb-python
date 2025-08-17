@@ -58,20 +58,15 @@ This project is currently under active development. The README will be updated s
 
 ### Usage
 
-- **x86_64**: `arn:aws:lambda:${REGION}:${ACCOUNT_ID}:layer:duckdb-python${PYTHON_VERSION}-x86_64:${LAYER_VERSION}`
-- **arm64**: `arn:aws:lambda:${REGION}:${ACCOUNT_ID}:layer:duckdb-python${PYTHON_VERSION}-arm64:${LAYER_VERSION}`
-
 To use the DuckDB layer in your Lambda function, add the appropriate layer ARN to your function configuration.
 
-### Mappings
-
-<!-- MAPPINGS-LIST:START -->
-| Layer version | DuckDB version |
-| ------------- | -------------- |
-| 2 | v0.9.0 |
-<!-- MAPPINGS-LIST:END -->
-
 You can find the complete list of layer ARNs in the [data/arns.json](data/arns.json) file.
+
+### Compatibility
+
+<!-- COMPATIBILITY-LIST:START -->
+
+<!-- COMPATIBILITY-LIST:END -->
 
 ## Contributing
 

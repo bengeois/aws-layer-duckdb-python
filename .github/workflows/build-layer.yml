@@ -9,6 +9,8 @@ on:
 #### ENV VARIABLES
 env:
   DUCKDB_VERSION: 0.9.0
+  ARCHITECTURES: "x86_64,arm64"
+  PYTHON_VERSIONS: "3.8,3.9,3.10,3.11"
   AWS_REGIONS: ${{ vars.AWS_REGIONS }}
   AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
 
@@ -20,13 +22,16 @@ jobs:
     outputs:
       architectures: ${{ steps.matrix.outputs.architectures }}
       python-versions: ${{ steps.matrix.outputs.python-versions }}
-      python-versions-string: ${{ steps.matrix.outputs.python-versions-string }}
     steps:
       - id: matrix
         run: |
-          echo 'architectures=["x86_64", "arm64"]' >> $GITHUB_OUTPUT
-          echo 'python-versions=["3.9", "3.10", "3.11"]' >> $GITHUB_OUTPUT
-          echo 'python-versions-string=3.9,3.10,3.11' >> $GITHUB_OUTPUT
+          # Convert comma-separated architectures to JSON array
+          ARCH_ARRAY=$(echo "${{ env.ARCHITECTURES }}" | sed 's/,/", "/g' | sed 's/^/["/' | sed 's/$/"]/')
+          echo "architectures=$ARCH_ARRAY" >> $GITHUB_OUTPUT
+
+          # Convert comma-separated Python versions to JSON array
+          PY_ARRAY=$(echo "${{ env.PYTHON_VERSIONS }}" | sed 's/,/", "/g' | sed 's/^/["/' | sed 's/$/"]/')
+          echo "python-versions=$PY_ARRAY" >> $GITHUB_OUTPUT
   ################################
   #### PACKAGE DUCKDB
   package-duckdb:
@@ -72,6 +77,7 @@ jobs:
         with:
           name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}
           path: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}.zip
+          retention-days: 1
 
   ################################
   #### PUBLISH LAYERS
@@ -106,82 +112,63 @@ jobs:
       - name: Publish Lambda Layer to All Regions
         id: publish
         run: |
-          # Create Python version without dot using sed
           PYTHON_VERSION_NODOT=$(echo "${{ matrix.python-version }}" | sed 's/\.//g')
-
-          # Get AWS regions from environment variable
           IFS=',' read -ra REGIONS <<< "${{ env.AWS_REGIONS }}"
 
-          # Initialize summary
-          echo "## Lambda Layer Publication Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          mkdir -p results
+          RESULT_FILE="results/arn-${{ env.DUCKDB_VERSION }}-${{ matrix.python-version }}-${{ matrix.architecture }}.json"
 
-          # Track success/failure
-          SUCCESS_COUNT=0
-          FAILED_REGIONS=()
-          LAYER_VERSION=""
+          # Initiate JSON structure for this combination
+          cat > $RESULT_FILE <<EOF
+          {
+            "${{ matrix.python-version }}": {
+              "${{ matrix.architecture }}": {
+              }
+            }
+          }
+          EOF
 
-          # Loop through each region
           for region in "${REGIONS[@]}"; do
             echo "Publishing to region: $region"
-
-            # Publish the layer
-            if layer_version=$(aws lambda publish-layer-version \
+            if ARN=$(aws lambda publish-layer-version \
               --region $region \
-              --layer-name duckdb-python-${PYTHON_VERSION_NODOT}-${{ matrix.architecture }} \
+              --layer-name duckdb-python${PYTHON_VERSION_NODOT}-${{ matrix.architecture }} \
               --description "DuckDB ${{ env.DUCKDB_VERSION }} Python ${{ matrix.python-version }} for AWS Lambda (${{ matrix.architecture }})" \
               --zip-file fileb://duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}.zip \
               --compatible-runtimes python${{ matrix.python-version }} \
               --compatible-architectures ${{ matrix.architecture }} \
-              --query 'Version' \
-              --output text 2>/dev/null); then
+              --query 'LayerVersionArn' \
+              --output text); then
 
-              echo "Published layer version: $layer_version in region $region"
+              echo "Published: $ARN"
 
-              # Store layer version for output (same version across all regions)
-              if [ -z "$LAYER_VERSION" ]; then
-                LAYER_VERSION=$layer_version
-              fi
+              # Add region:arn pair to JSON structure
+              tmp=$(mktemp)
+              jq --arg region "$region" --arg arn "$ARN" \
+                 '.["'${{ matrix.python-version }}'"]["'${{ matrix.architecture }}'"] += {($region): $arn}' \
+                 $RESULT_FILE > $tmp
+              mv $tmp $RESULT_FILE
 
-              # Make the layer public
+              # Rendre la layer publique
               aws lambda add-layer-version-permission \
                 --region $region \
-                --layer-name duckdb-python-${PYTHON_VERSION_NODOT}-${{ matrix.architecture }} \
-                --version-number $layer_version \
+                --layer-name duckdb-python${PYTHON_VERSION_NODOT}-${{ matrix.architecture }} \
+                --version-number $(echo $ARN | awk -F: '{print $NF}') \
                 --statement-id public-access \
                 --action lambda:GetLayerVersion \
-                --principal "*" >/dev/null 2>&1 || echo "Could not set public permission for $region (may already exist)"
-
-              SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-
-            else
-              echo "Failed to publish to region: $region"
-              FAILED_REGIONS+=($region)
+                --principal "*" || true
             fi
-
-            # Small delay to avoid rate limiting
             sleep 1
           done
 
-          # Set output for layer version
-          echo "layer-version=$LAYER_VERSION" >> $GITHUB_OUTPUT
+          echo "Results saved in $RESULT_FILE"
 
-          # Final summary
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "**Summary**: $SUCCESS_COUNT/${#REGIONS[@]} regions successful" >> $GITHUB_STEP_SUMMARY
-          echo "**Layer Name**: duckdb-python-${PYTHON_VERSION_NODOT}-${{ matrix.architecture }}" >> $GITHUB_STEP_SUMMARY
-          echo "**DuckDB Version**: ${{ env.DUCKDB_VERSION }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Architecture**: ${{ matrix.architecture }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Layer Version**: $LAYER_VERSION" >> $GITHUB_STEP_SUMMARY
-
-          if [ ${#FAILED_REGIONS[@]} -gt 0 ]; then
-            echo "**Failed Regions**: ${FAILED_REGIONS[*]}" >> $GITHUB_STEP_SUMMARY
-            echo "Some regions failed. Check the logs for details."
-            exit 1
-          else
-            echo "All regions published successfully!"
-          fi
+      - name: Upload publish results
+        uses: actions/upload-artifact@v4
+        with:
+          name: arns-${{ env.DUCKDB_VERSION }}-${{ matrix.python-version }}-${{ matrix.architecture }}
+          path: results/
+          retention-days: 1
 
   ################################
   #### UPDATE DOCUMENTATION
@@ -189,6 +176,7 @@ jobs:
     name: Update Documentation
     needs: [setup, publish-layer]
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'test' }}
     permissions:
       contents: write
     steps:
@@ -202,16 +190,47 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Update documentations
+      - name: Download all publish results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: arns-*
+          path: arn-results
+          merge-multiple: true
+
+      - name: Merge JSON results into data/arns.json
         run: |
-          python scripts/update-docs.py "${{ env.AWS_ACCOUNT_ID }}" "${{ env.DUCKDB_VERSION }}" "${{ needs.publish-layer.outputs.layer-version }}" "${{ env.AWS_REGIONS }}" "${{ needs.setup.outputs.python-versions-string }}"
+          mkdir -p data
+
+          # Ensure data/arns.json exists
+          if [ ! -f data/arns.json ]; then
+            echo "{}" > data/arns.json
+          fi
+
+          # Merge all results into a single block
+          jq -s 'reduce .[] as $item ({}; . * $item)' arn-results/*.json > arn-results/all.json
+
+          echo "Merged all publish results:"
+          cat arn-results/all.json
+
+          # Inject all.json under the DUCKDB_VERSION key in data/arns.json
+          tmp=$(mktemp)
+          jq --arg version "${{ env.DUCKDB_VERSION }}" \
+             --slurpfile new arn-results/all.json \
+             '.[$version] = $new[0]' data/arns.json > "$tmp" && mv "$tmp" data/arns.json
+
+          echo "data/arns.json updated."
+
+      - name: Update README mappings table
+        run: |
+          echo "Updating README table..."
+          python scripts/update_readme.py
 
       - uses: stefanzweifel/git-auto-commit-action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          commit_message: "docs(): update documentation with for DuckDB ${{ env.DUCKDB_VERSION }}"
-          branch: "main"
+          commit_message: "docs(): update documentation for DuckDB ${{ env.DUCKDB_VERSION }}"
+          branch: "ft/docs-runtimes"
           commit_user_name: "bengeois"
           commit_user_email: "me@bbourgeois.dev"
           commit_author: bengeois 🤖 <me@bbourgeois.dev>
