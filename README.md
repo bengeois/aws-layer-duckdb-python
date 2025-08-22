@@ -66,6 +66,10 @@ You can find the complete list of layer ARNs in the [data/arns.json](data/arns.j
 
 <!-- COMPATIBILITY-LIST:START -->
 
+| DuckDB version | Python versions | Architectures |
+| -------------- | --------------- | ------------- |
+| 0.9.0 | 3.10, 3.11, 3.8, 3.9 | arm64, x86_64 |
+
 <!-- COMPATIBILITY-LIST:END -->
 
 ## Contributing
