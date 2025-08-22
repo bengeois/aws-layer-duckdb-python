@@ -1,22 +1,22 @@
 #!/bin/bash
 
-# Avertissement: Ceci est une action destructive et irréversible.
-# Définis le propriétaire et le nom du dépôt
+# WARNING: This is a destructive and irreversible action.
+# Define the owner and repository name
 OWNER="bengeois"
 REPO="aws-layer-duckdb-python"
 
-# Liste toutes les exécutions de workflow pour le dépôt
+# List all workflow runs for the repository
 echo "Listing all workflow runs for $OWNER/$REPO..."
 RUNS=$(gh run list --repo $OWNER/$REPO --json databaseId --jq '.[].databaseId')
 
-# Pour chaque exécution, liste et supprime ses artifacts
+# For each run, list and delete its artifacts
 for run_id in $RUNS; do
     echo "Processing workflow run ID: $run_id"
-    
-    # Liste les artifacts de cette exécution
+
+    # List the artifacts for this run
     ARTIFACTS=$(gh api "repos/$OWNER/$REPO/actions/runs/$run_id/artifacts" --jq '.artifacts')
 
-    # Si des artifacts existent, les supprimer un par un
+    # If artifacts exist, delete them one by one
     if [[ $(echo $ARTIFACTS | jq 'length') -gt 0 ]]; then
         echo "  Found artifacts. Deleting them..."
         ARTIFACT_IDS=$(echo $ARTIFACTS | jq '.[].id')
