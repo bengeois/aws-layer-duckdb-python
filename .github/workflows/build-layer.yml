@@ -230,7 +230,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           commit_message: "docs(): update documentation for DuckDB ${{ env.DUCKDB_VERSION }}"
-          branch: "ft/docs-runtimes"
+          branch: "main"
           commit_user_name: "bengeois"
           commit_user_email: "me@bbourgeois.dev"
           commit_author: bengeois 🤖 <me@bbourgeois.dev>
