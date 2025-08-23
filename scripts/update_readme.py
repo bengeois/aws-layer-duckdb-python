@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import json
-import os
 from pathlib import Path
+from packaging.version import Version
 
 START_DELIM = "<!-- COMPATIBILITY-LIST:START -->"
 END_DELIM = "<!-- COMPATIBILITY-LIST:END -->"
@@ -25,8 +25,14 @@ def build_table(arns_data):
         "| -------------- | --------------- | ------------- |"
     ]
 
-    for duckdb_ver, py_map in sorted(arns_data.items()):
-        python_versions = sorted(py_map.keys())
+    # Sort items by DuckDB version
+    sorted_items = sorted(
+        arns_data.items(),
+        key=lambda x: Version(x[0])
+    )
+
+    for duckdb_ver, py_map in sorted_items:
+        python_versions = sorted(py_map.keys(), key=lambda v: Version(v))
         architectures = sorted(
             {arch for archs in py_map.values() for arch in archs.keys()}
         )
