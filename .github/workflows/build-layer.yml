@@ -8,7 +8,7 @@ on:
 ################################
 #### ENV VARIABLES
 env:
-  DUCKDB_VERSION: 0.10.0
+  DUCKDB_VERSION: 0.10.1
   ARCHITECTURES: "x86_64,arm64"
   PYTHON_VERSIONS: "3.8,3.9,3.10,3.11,3.12"
   AWS_REGIONS: ${{ vars.AWS_REGIONS }}
@@ -186,9 +186,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+          cache: "pip"
 
       - name: Download all publish results
         uses: actions/download-artifact@v4
@@ -223,6 +224,7 @@ jobs:
       - name: Update README mappings table
         run: |
           echo "Updating README table..."
+          pip install -r scripts/requirements.txt
           python scripts/update_readme.py
 
       - uses: stefanzweifel/git-auto-commit-action@v4
