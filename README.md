@@ -8,9 +8,9 @@ This project provides ready-to-use Lambda layers containing DuckDB Python bindin
 
 ### Features (Preview)
 
-- 🚀 **Pre-built and optimized** for AWS Lambda Python 3.13 runtime
+- 🚀 **Pre-built and optimized** for AWS Lambda Python runtimes
 - 🌍 **Multi-region support** - Available in all AWS regions
-- 🏗️ **Multiple architectures** - Support for both x86_64 and ARM64 (Graviton2)
+- 🏗️ **Multiple architectures** - Support for both x86_64 and ARM64
 - 📦 **Easy integration** - Just add the layer ARN to your Lambda function
 - 🔄 **Automated builds** - Continuously updated with latest DuckDB versions
 - 🆓 **Public layers** - No AWS account restrictions
@@ -43,16 +43,6 @@ This project provides ready-to-use Lambda layers containing DuckDB Python bindin
            'body': result[0][0]
        }
    ```
-
-## 🚧 Development Status
-
-This project is currently under active development. The README will be updated soon with:
-
-- ✅ Complete list of Layer ARNs for all regions
-- ✅ Detailed usage examples and best practices
-- ✅ Version compatibility matrix
-
-**Stay tuned for updates!** ⭐ Star this repository to get notified when the full documentation is available.
 
 ## DuckDB layers
 
