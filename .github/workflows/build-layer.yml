@@ -8,7 +8,7 @@ on:
 ################################
 #### ENV VARIABLES
 env:
-  DUCKDB_VERSION: 1.3.2
+  DUCKDB_VERSION: 1.4.0
   ARCHITECTURES: "x86_64,arm64"
   PYTHON_VERSIONS: "3.9,3.10,3.11,3.12,3.13"
   AWS_REGIONS: ${{ vars.AWS_REGIONS }}
