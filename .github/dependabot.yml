@@ -1,0 +1,46 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+    groups:
+      github-actions:
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+    groups:
+      docker:
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  - package-ecosystem: "pip"
+    directory: "/scripts"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+    groups:
+      pip:
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
