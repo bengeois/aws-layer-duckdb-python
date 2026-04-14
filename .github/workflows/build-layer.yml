@@ -227,7 +227,7 @@ jobs:
           pip install -r scripts/requirements.txt
           python scripts/update_readme.py
 
-      - uses: stefanzweifel/git-auto-commit-action@v4
+      - uses: stefanzweifel/git-auto-commit-action@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
