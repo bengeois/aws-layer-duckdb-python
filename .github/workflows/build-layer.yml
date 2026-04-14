@@ -96,7 +96,7 @@ jobs:
     steps:
       - name: Download artifact
         id: download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}
 
@@ -192,7 +192,7 @@ jobs:
           cache: "pip"
 
       - name: Download all publish results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: arns-*
           path: arn-results
