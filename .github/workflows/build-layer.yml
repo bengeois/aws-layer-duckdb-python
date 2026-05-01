@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload artifact
         id: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}
           path: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}.zip
@@ -164,7 +164,7 @@ jobs:
           echo "Results saved in $RESULT_FILE"
 
       - name: Upload publish results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: arns-${{ env.DUCKDB_VERSION }}-${{ matrix.python-version }}-${{ matrix.architecture }}
           path: results/
