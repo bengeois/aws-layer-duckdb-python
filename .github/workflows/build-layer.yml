@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - ".github/.duckdb-version"
       - ".github/workflows/build-layer.yml"
       - "docker/**"
 
 ################################
 #### ENV VARIABLES
 env:
-  DUCKDB_VERSION: 1.5.3
   ARCHITECTURES: "x86_64,arm64"
   PYTHON_VERSIONS: "3.10,3.11,3.12,3.13,3.14"
   AWS_REGIONS: ${{ vars.AWS_REGIONS }}
@@ -26,7 +26,15 @@ jobs:
     outputs:
       architectures: ${{ steps.matrix.outputs.architectures }}
       python-versions: ${{ steps.matrix.outputs.python-versions }}
+      duckdb-version: ${{ steps.version.outputs.duckdb-version }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Read DuckDB version
+        id: version
+        run: echo "duckdb-version=$(cat .github/.duckdb-version | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+
       - id: matrix
         run: |
           # Convert comma-separated architectures to JSON array
@@ -61,7 +69,7 @@ jobs:
       - name: Build DuckDB
         id: build
         run: |
-          docker build --platform ${{ matrix.architecture == 'x86_64' && 'linux/amd64' || 'linux/arm64' }} --build-arg DUCKDB_VERSION=${{ env.DUCKDB_VERSION }} --build-arg PYTHON_VERSION=${{ matrix.python-version }} --build-arg ARCHITECTURE=${{ matrix.architecture }} -f ./docker/Dockerfile -t layer-duckdb:latest .
+          docker build --platform ${{ matrix.architecture == 'x86_64' && 'linux/amd64' || 'linux/arm64' }} --build-arg DUCKDB_VERSION=${{ needs.setup.outputs.duckdb-version }} --build-arg PYTHON_VERSION=${{ matrix.python-version }} --build-arg ARCHITECTURE=${{ matrix.architecture }} -f ./docker/Dockerfile -t layer-duckdb:latest .
 
       - name: Extract zip from Docker container
         id: extract-zip
@@ -70,7 +78,7 @@ jobs:
           container_id=$(docker create --platform ${{ matrix.architecture == 'x86_64' && 'linux/amd64' || 'linux/arm64' }} layer-duckdb:latest)
 
           # Copy the zip file from the container
-          docker cp $container_id:/tmp/duckdb.zip ./duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}.zip
+          docker cp $container_id:/tmp/duckdb.zip ./duckdb-${{ needs.setup.outputs.duckdb-version }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}.zip
 
           # Clean up the container
           docker rm $container_id
@@ -79,8 +87,8 @@ jobs:
         id: upload
         uses: actions/upload-artifact@v7
         with:
-          name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}
-          path: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}.zip
+          name: duckdb-${{ needs.setup.outputs.duckdb-version }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}
+          path: duckdb-${{ needs.setup.outputs.duckdb-version }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}.zip
           retention-days: 1
 
   ################################
@@ -103,7 +111,7 @@ jobs:
         id: download
         uses: actions/download-artifact@v8
         with:
-          name: duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}
+          name: duckdb-${{ needs.setup.outputs.duckdb-version }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}
 
       # Configure AWS credentials
       - name: Configure AWS credentials
@@ -121,7 +129,7 @@ jobs:
           IFS=',' read -ra REGIONS <<< "${{ env.AWS_REGIONS }}"
 
           mkdir -p results
-          RESULT_FILE="results/arn-${{ env.DUCKDB_VERSION }}-${{ matrix.python-version }}-${{ matrix.architecture }}.json"
+          RESULT_FILE="results/arn-${{ needs.setup.outputs.duckdb-version }}-${{ matrix.python-version }}-${{ matrix.architecture }}.json"
 
           # Initiate JSON structure for this combination
           cat > $RESULT_FILE <<EOF
@@ -138,8 +146,8 @@ jobs:
             if ARN=$(aws lambda publish-layer-version \
               --region $region \
               --layer-name duckdb-python${PYTHON_VERSION_NODOT}-${{ matrix.architecture }} \
-              --description "DuckDB ${{ env.DUCKDB_VERSION }} Python ${{ matrix.python-version }} for AWS Lambda (${{ matrix.architecture }})" \
-              --zip-file fileb://duckdb-${{ env.DUCKDB_VERSION }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}.zip \
+              --description "DuckDB ${{ needs.setup.outputs.duckdb-version }} Python ${{ matrix.python-version }} for AWS Lambda (${{ matrix.architecture }})" \
+              --zip-file fileb://duckdb-${{ needs.setup.outputs.duckdb-version }}-python-${{ matrix.python-version }}-${{ matrix.architecture }}.zip \
               --compatible-runtimes python${{ matrix.python-version }} \
               --compatible-architectures ${{ matrix.architecture }} \
               --query 'LayerVersionArn' \
@@ -171,7 +179,7 @@ jobs:
       - name: Upload publish results
         uses: actions/upload-artifact@v7
         with:
-          name: arns-${{ env.DUCKDB_VERSION }}-${{ matrix.python-version }}-${{ matrix.architecture }}
+          name: arns-${{ needs.setup.outputs.duckdb-version }}-${{ matrix.python-version }}-${{ matrix.architecture }}
           path: results/
           retention-days: 1
 
@@ -221,7 +229,7 @@ jobs:
 
           # Inject all.json under the DUCKDB_VERSION key in data/arns.json
           tmp=$(mktemp)
-          jq --arg version "${{ env.DUCKDB_VERSION }}" \
+          jq --arg version "${{ needs.setup.outputs.duckdb-version }}" \
              --slurpfile new arn-results/all.json \
              '.[$version] = $new[0]' data/arns.json > "$tmp" && mv "$tmp" data/arns.json
 
@@ -237,7 +245,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          commit_message: "docs(): update documentation for DuckDB ${{ env.DUCKDB_VERSION }}"
+          commit_message: "docs(): update documentation for DuckDB ${{ needs.setup.outputs.duckdb-version }}"
           branch: "main"
           commit_user_name: "bengeois"
           commit_user_email: "me@bbourgeois.dev"
