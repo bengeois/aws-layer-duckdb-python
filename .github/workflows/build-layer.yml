@@ -4,6 +4,10 @@ name: Build AWS Lambda Layers for DuckDB
 #### TRIGGER
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/build-layer.yml"
+      - "docker/**"
 
 ################################
 #### ENV VARIABLES
@@ -84,6 +88,7 @@ jobs:
   publish-layer:
     name: Publish Layer to all AWS Regions
     needs: [setup, package-duckdb]
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'test' }}
     outputs:
@@ -175,6 +180,7 @@ jobs:
   update-documentation:
     name: Update Documentation
     needs: [setup, publish-layer]
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'test' }}
     permissions:
