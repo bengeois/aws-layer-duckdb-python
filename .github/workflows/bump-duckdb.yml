@@ -37,12 +37,12 @@ jobs:
           fi
           echo "version=$LATEST" >> "$GITHUB_OUTPUT"
 
-      - name: Get current DUCKDB_VERSION
+      - name: Get current DuckDB version
         id: current
         run: |
-          CURRENT=$(grep -oP '^\s*DUCKDB_VERSION:\s*\K.*' .github/workflows/build-layer.yml | tr -d ' ')
+          CURRENT=$(cat .github/.duckdb-version | tr -d '[:space:]')
           if [ -z "$CURRENT" ]; then
-            echo "Failed to read current DUCKDB_VERSION"
+            echo "Failed to read .github/.duckdb-version"
             exit 1
           fi
           echo "version=$CURRENT" >> "$GITHUB_OUTPUT"
@@ -58,14 +58,9 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Update workflow file
+      - name: Update DuckDB version file
         if: steps.diff.outputs.changed == 'true'
-        run: |
-          sed -i "s/^  DUCKDB_VERSION: .*/  DUCKDB_VERSION: ${{ steps.pypi.outputs.version }}/" .github/workflows/build-layer.yml
-          if git diff --quiet .github/workflows/build-layer.yml; then
-            echo "sed produced no diff — workflow format may have changed"
-            exit 1
-          fi
+        run: echo "${{ steps.pypi.outputs.version }}" > .github/.duckdb-version
 
       - name: Create pull request
         if: steps.diff.outputs.changed == 'true'
