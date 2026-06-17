@@ -1,0 +1,84 @@
+name: Bump DuckDB version
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: bump-duckdb
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Generate App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.BUMP_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BUMP_APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Get latest DuckDB version from PyPI
+        id: pypi
+        run: |
+          LATEST=$(curl -fsSL https://pypi.org/pypi/duckdb/json | jq -r .info.version)
+          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+            echo "Failed to fetch latest version from PyPI"
+            exit 1
+          fi
+          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
+
+      - name: Get current DUCKDB_VERSION
+        id: current
+        run: |
+          CURRENT=$(grep -oP '^\s*DUCKDB_VERSION:\s*\K.*' .github/workflows/build-layer.yml | tr -d ' ')
+          if [ -z "$CURRENT" ]; then
+            echo "Failed to read current DUCKDB_VERSION"
+            exit 1
+          fi
+          echo "version=$CURRENT" >> "$GITHUB_OUTPUT"
+
+      - name: Compare versions
+        id: diff
+        run: |
+          if [ "${{ steps.current.outputs.version }}" = "${{ steps.pypi.outputs.version }}" ]; then
+            echo "Already up to date (${{ steps.current.outputs.version }})"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Bump ${{ steps.current.outputs.version }} -> ${{ steps.pypi.outputs.version }}"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update workflow file
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          sed -i "s/^  DUCKDB_VERSION: .*/  DUCKDB_VERSION: ${{ steps.pypi.outputs.version }}/" .github/workflows/build-layer.yml
+          if git diff --quiet .github/workflows/build-layer.yml; then
+            echo "sed produced no diff — workflow format may have changed"
+            exit 1
+          fi
+
+      - name: Create pull request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          branch: bump/duckdb-${{ steps.pypi.outputs.version }}
+          commit-message: "feat(): Update DUCKDB_VERSION to ${{ steps.pypi.outputs.version }}"
+          title: "feat(): Update DUCKDB_VERSION to ${{ steps.pypi.outputs.version }}"
+          body: |
+            Bump DuckDB from ${{ steps.current.outputs.version }} to ${{ steps.pypi.outputs.version }}.
+
+            Release notes: https://github.com/duckdb/duckdb/releases/tag/v${{ steps.pypi.outputs.version }}
+
+            CI will validate the build matrix (Python × arch). Merge to publish layers.
+          labels: dependencies
