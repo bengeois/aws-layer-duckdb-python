@@ -76,4 +76,7 @@ jobs:
             Release notes: https://github.com/duckdb/duckdb/releases/tag/v${{ steps.pypi.outputs.version }}
 
             CI will validate the build matrix (Python × arch). Merge to publish layers.
+
+            > [!NOTE]
+            > If `PYTHON_VERSIONS` needs updating (new Lambda runtime or DuckDB dropped/added support), edit `.github/workflows/build-layer.yml` directly on this branch before merging.
           labels: dependencies
