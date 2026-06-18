@@ -62,6 +62,16 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         run: echo "${{ steps.pypi.outputs.version }}" > .github/.duckdb-version
 
+      - name: Set up Python
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Update PYTHON_VERSIONS
+        if: steps.diff.outputs.changed == 'true'
+        run: python scripts/update_python_versions.py
+
       - name: Create pull request
         if: steps.diff.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v8
@@ -75,8 +85,8 @@ jobs:
 
             Release notes: https://github.com/duckdb/duckdb/releases/tag/v${{ steps.pypi.outputs.version }}
 
-            CI will validate the build matrix (Python × arch). Merge to publish layers.
+            CI will validate the build matrix (Python x arch). Merge to publish layers.
 
             > [!NOTE]
-            > If `PYTHON_VERSIONS` needs updating (new Lambda runtime or DuckDB dropped/added support), edit `.github/workflows/build-layer.yml` directly on this branch before merging.
+            > `PYTHON_VERSIONS` has been updated automatically to match DuckDB wheels and Lambda runtimes. Review the diff if Python versions changed.
           labels: dependencies
