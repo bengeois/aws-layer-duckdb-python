@@ -1,0 +1,24 @@
+name: Check Python versions matrix
+
+on:
+  pull_request:
+    paths:
+      - ".github/.duckdb-version"
+      - ".github/.lambda-python-runtimes"
+      - ".github/workflows/build-layer.yml"
+
+jobs:
+  check:
+    name: Check PYTHON_VERSIONS against DuckDB wheels and Lambda runtimes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Check PYTHON_VERSIONS
+        run: python scripts/check_python_versions.py
