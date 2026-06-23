@@ -92,6 +92,20 @@ jobs:
           retention-days: 1
 
   ################################
+  #### GATE
+  all-builds-passed:
+    name: All builds passed
+    needs: [package-duckdb]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix result
+        run: |
+          if [ "${{ needs.package-duckdb.result }}" != "success" ]; then
+            exit 1
+          fi
+
+  ################################
   #### PUBLISH LAYERS
   publish-layer:
     name: Publish Layer to all AWS Regions
