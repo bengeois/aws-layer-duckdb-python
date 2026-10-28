@@ -9,7 +9,11 @@ from pathlib import Path
 repo_root = Path(__file__).parent.parent
 
 
-def fetch_duckdb_pythons(version: str) -> set[str]:
+def ver_key(v: str) -> tuple:
+    return tuple(int(x) for x in v.split("."))
+
+
+def fetch_duckdb_pythons(version: str, lambda_runtimes: set[str]) -> set[str]:
     url = f"https://pypi.org/pypi/duckdb/{version}/json"
     try:
         with urllib.request.urlopen(url) as response:
@@ -28,9 +32,14 @@ def fetch_duckdb_pythons(version: str) -> set[str]:
         filename = file["filename"]
         if "manylinux" not in filename:
             continue
-        match = re.search(r"cp3(\d+)", filename)
-        if match:
-            pythons.add(f"3.{match.group(1)}")
+        match = re.search(r"-cp3(\d+)-(abi3|cp3\d+)-", filename)
+        if not match:
+            continue
+        minor = f"3.{match.group(1)}"
+        pythons.add(minor)
+        # An abi3 wheel serves its minor version and every later one.
+        if match.group(2) == "abi3":
+            pythons |= {v for v in lambda_runtimes if ver_key(v) >= ver_key(minor)}
     return pythons
 
 
@@ -51,17 +60,14 @@ def read_python_versions() -> set[str]:
 def main():
     duckdb_version = (repo_root / ".github" / ".duckdb-version").read_text().strip()
 
-    duckdb_pythons = fetch_duckdb_pythons(duckdb_version)
     lambda_runtimes = read_lambda_runtimes()
+    duckdb_pythons = fetch_duckdb_pythons(duckdb_version, lambda_runtimes)
     current = read_python_versions()
     expected = duckdb_pythons & lambda_runtimes
 
     if expected == current:
         print(f"PYTHON_VERSIONS is correct for DuckDB {duckdb_version}.")
         return
-
-    def ver_key(v: str) -> tuple:
-        return tuple(int(x) for x in v.split("."))
 
     print(f"PYTHON_VERSIONS mismatch for DuckDB {duckdb_version}:")
     for v in sorted(expected - current, key=ver_key):
