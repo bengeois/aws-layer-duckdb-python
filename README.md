@@ -89,6 +89,7 @@ You can find the complete list of layer ARNs in the [data/arns.json](data/arns.j
 | 1.5.4 | 3.10, 3.11, 3.12, 3.13, 3.14 | arm64, x86_64 |
 | 1.5.5 | 3.10, 3.11, 3.12, 3.13, 3.14 | arm64, x86_64 |
 | 1.5.6 | 3.10, 3.11, 3.12, 3.13, 3.14 | arm64, x86_64 |
+| 2.0.0 | 3.11, 3.12, 3.13, 3.14, 3.15 | arm64, x86_64 |
 
 <!-- COMPATIBILITY-LIST:END -->
 
